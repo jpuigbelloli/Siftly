@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { BookmarkIcon, Tag, Image, Layers, Upload, Sparkles, Search, ArrowRight, TrendingUp, Bookmark } from 'lucide-react'
 import prisma from '@/lib/db'
 import BookmarkCard from '@/components/bookmark-card'
+import { Greeting, FormattedDate } from '@/components/greeting-date'
 import type { BookmarkWithMedia } from '@/lib/types'
 
 const RECENT_QUERY = {
@@ -98,21 +99,6 @@ async function getDashboardData() {
   }
 }
 
-function getGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 17) return 'Good afternoon'
-  return 'Good evening'
-}
-
-function formatDate(): string {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  })
-}
-
 interface StatCardProps {
   label: string
   value: number
@@ -163,11 +149,11 @@ export default async function DashboardPage() {
 
       {/* Hero Section */}
       <div>
-        <p className="text-sm text-zinc-500 mb-1 uppercase tracking-widest font-medium">{formatDate()}</p>
+        <p className="text-sm text-zinc-500 mb-1 uppercase tracking-widest font-medium"><FormattedDate /></p>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-zinc-100">
-              {getGreeting()} <span className="text-indigo-400">&#128075;</span>
+              <Greeting /> <span className="text-indigo-400">&#128075;</span>
             </h1>
             <p className="text-zinc-400 mt-1.5">
               You have{' '}

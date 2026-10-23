@@ -31,8 +31,10 @@ export async function getAnthropicModel(): Promise<string> {
  */
 export async function getProvider(): Promise<'anthropic' | 'openai' | 'minimax'> {
   if (_cachedProvider && Date.now() < _providerCacheExpiry) return _cachedProvider
-  const setting = await prisma.setting.findUnique({ where: { key: 'aiProvider' } })
-  const val = setting?.value
+  // Optional env override (e.g. run script for an OpenAI-compatible endpoint)
+  const envProvider = process.env.SIFTLY_AI_PROVIDER?.trim()
+  const setting = envProvider ? null : await prisma.setting.findUnique({ where: { key: 'aiProvider' } })
+  const val = envProvider || setting?.value
   _cachedProvider = val === 'openai' ? 'openai' : val === 'minimax' ? 'minimax' : 'anthropic'
   _providerCacheExpiry = Date.now() + CACHE_TTL
   return _cachedProvider
@@ -43,8 +45,9 @@ export async function getProvider(): Promise<'anthropic' | 'openai' | 'minimax'>
  */
 export async function getOpenAIModel(): Promise<string> {
   if (_cachedOpenAIModel && Date.now() < _openAIModelCacheExpiry) return _cachedOpenAIModel
-  const setting = await prisma.setting.findUnique({ where: { key: 'openaiModel' } })
-  _cachedOpenAIModel = setting?.value ?? 'gpt-4.1-mini'
+  const envModel = process.env.OPENAI_MODEL?.trim()
+  const setting = envModel ? null : await prisma.setting.findUnique({ where: { key: 'openaiModel' } })
+  _cachedOpenAIModel = envModel || setting?.value || 'gpt-4.1-mini'
   _openAIModelCacheExpiry = Date.now() + CACHE_TTL
   return _cachedOpenAIModel
 }

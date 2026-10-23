@@ -66,6 +66,18 @@ export class AnthropicAIClient implements AIClient {
   }
 }
 
+// Optional global throttle for rate-limited endpoints (e.g. free tiers).
+// SIFTLY_MIN_REQUEST_INTERVAL_MS spaces out request *starts* across all workers.
+let _nextSlot = 0
+async function throttle(): Promise<void> {
+  const gap = Number(process.env.SIFTLY_MIN_REQUEST_INTERVAL_MS) || 0
+  if (gap <= 0) return
+  const now = Date.now()
+  const start = Math.max(now, _nextSlot)
+  _nextSlot = start + gap
+  if (start > now) await new Promise((r) => setTimeout(r, start - now))
+}
+
 // Wrap OpenAI SDK
 export class OpenAIAIClient implements AIClient {
   provider = 'openai' as const
@@ -90,6 +102,7 @@ export class OpenAIAIClient implements AIClient {
       return { role: 'user' as const, content: parts }
     })
 
+    await throttle()
     const completion = await this.sdk.chat.completions.create({
       model: params.model,
       max_tokens: params.max_tokens,

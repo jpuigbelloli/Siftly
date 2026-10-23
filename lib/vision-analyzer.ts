@@ -117,7 +117,7 @@ async function analyzeImageWithRetry(
   try {
     const response = await client.createMessage({
       model,
-      max_tokens: 700,
+      max_tokens: Math.max(256, Number(process.env.SIFTLY_VISION_MAX_TOKENS) || 700),
       messages: [
         {
           role: 'user',
@@ -129,11 +129,11 @@ async function analyzeImageWithRetry(
       ],
     })
     const raw = response.text?.trim() ?? ''
-    if (!raw) return ''
+    if (!raw) { console.warn('[vision] empty response'); return '' }
 
     // Validate it's parseable JSON
     const jsonMatch = raw.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return ''
+    if (!jsonMatch) { console.warn(`[vision] no JSON in response (len ${raw.length})`); return '' }
     JSON.parse(jsonMatch[0]) // throws if invalid
     return jsonMatch[0]
   } catch (err) {

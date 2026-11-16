@@ -1,0 +1,41 @@
+# Siftly en la z370 (plan 9.7). Uso:
+#   cd /data/apps/siftly/src && docker compose -f docker/compose.z370.yml up -d --build
+# Datos: /data/apps/siftly/data/siftly.db (bind mount, dueño jose). Sin key de IA hasta que
+# José complete /data/apps/siftly/.env (600, excluido del backup por **/.env).
+# Deshacer: docker compose -f docker/compose.z370.yml down  (no borra los datos).
+name: siftly
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: siftly:z370
+    container_name: siftly
+    # Corre como jose (1000:1000) para que la DB quede de jose en el host.
+    user: "1000:1000"
+    ports:
+      # Solo localhost; al tailnet se expone con tailscale serve (HTTPS 443). Nunca 0.0.0.0.
+      - "127.0.0.1:3001:3000"
+    env_file:
+      - path: /data/apps/siftly/.env
+        required: false
+    environment:
+      DATABASE_URL: "file:/data/siftly.db"
+      NEXT_TELEMETRY_DISABLED: "1"
+      CHECKPOINT_DISABLE: "1"
+      # Mismo perfil que siftly-run.sh de la box (capa gratis de Gemini vía endpoint OpenAI).
+      SIFTLY_AI_PROVIDER: "openai"
+      OPENAI_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+      OPENAI_MODEL: "gemini-3.5-flash-lite"
+      SIFTLY_PIPELINE_WORKERS: "1"
+      SIFTLY_VISION_CONCURRENCY: "1"
+      SIFTLY_ENRICH_CONCURRENCY: "1"
+      SIFTLY_MIN_REQUEST_INTERVAL_MS: "6000"
+      SIFTLY_VISION_MAX_TOKENS: "2000"
+    volumes:
+      - /data/apps/siftly/data:/data
+    tmpfs:
+      # Cache de Next (imágenes optimizadas); /app es de appuser y el contenedor corre como 1000.
+      - /app/.next/cache:uid=1000,gid=1000,mode=0755
+    restart: unless-stopped

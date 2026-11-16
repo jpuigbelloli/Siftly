@@ -68,7 +68,7 @@ Rules:
 - GOOD tags: "bitcoin price chart", "react hooks", "frustrated man", "gpt-4", "bull market"`
 
 const RETRY_DELAYS_MS = [1500, 4000, 10000]
-const CONCURRENCY = 12
+const CONCURRENCY = Math.max(1, Number(process.env.SIFTLY_VISION_CONCURRENCY) || 12)
 
 /**
  * CLI-based vision analysis: passes the image URL in the prompt text.
@@ -117,7 +117,7 @@ async function analyzeImageWithRetry(
   try {
     const response = await client.createMessage({
       model,
-      max_tokens: 700,
+      max_tokens: Math.max(256, Number(process.env.SIFTLY_VISION_MAX_TOKENS) || 700),
       messages: [
         {
           role: 'user',
@@ -129,11 +129,11 @@ async function analyzeImageWithRetry(
       ],
     })
     const raw = response.text?.trim() ?? ''
-    if (!raw) return ''
+    if (!raw) { console.warn('[vision] empty response'); return '' }
 
     // Validate it's parseable JSON
     const jsonMatch = raw.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return ''
+    if (!jsonMatch) { console.warn(`[vision] no JSON in response (len ${raw.length})`); return '' }
     JSON.parse(jsonMatch[0]) // throws if invalid
     return jsonMatch[0]
   } catch (err) {
@@ -316,7 +316,7 @@ export async function analyzeAllUntagged(
 // ── Batch semantic enrichment ──────────────────────────────────────────────────
 
 const ENRICH_BATCH_SIZE = 5
-const ENRICH_CONCURRENCY = 2
+const ENRICH_CONCURRENCY = Math.max(1, Number(process.env.SIFTLY_ENRICH_CONCURRENCY) || 2)
 
 export interface BookmarkForEnrichment {
   id: string

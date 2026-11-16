@@ -91,7 +91,7 @@ export async function DELETE(): Promise<NextResponse> {
   return NextResponse.json({ stopped: true })
 }
 
-const PIPELINE_WORKERS = 5
+const PIPELINE_WORKERS = Math.max(1, Number(process.env.SIFTLY_PIPELINE_WORKERS) || 5)
 const CAT_BATCH_SIZE = 25
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
